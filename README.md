@@ -169,6 +169,7 @@ MyNotify?.Call("SendNotify", player, 3, "PVP will be enabled in 5 minutes!");
 MyNotify?.Call("SendNotify", player, 4, "⭐ Special event starting at Airfield in 10 minutes!");```
 
 ### Alternative Method (Plugin-Independent)
+```csharp
 // Use Interface.CallHook for better compatibility
 Interface.CallHook("SendNotify", player, type, message);
 ```
