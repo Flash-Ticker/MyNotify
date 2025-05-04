@@ -111,6 +111,10 @@ These commands are included for compatibility with the original Notify plugin:
   }
 }
 ```
+## Multilingual
+Default: EN 
+DE | ES | FR | IT | NL | PL | PT | RU | SE | TR | UK | CN | KR | CH
+
 
 ## API
 
