@@ -6,7 +6,7 @@
 **Dev Language:** *C# (Oxide/uMod)*  
 **Plugin Language:** *English, German, Russian*  
 **Author:** [@RustFlash](https://github.com/Flash-Ticker)  
-[![RustFlash - Your Favourite Trio Server](https://github.com/MyNotify/ResourceTrader/blob/main/MyNotify_Thumb.png)](https://youtu.be/xJzMHkWhYpw?si=Xg3FFy5DJ8DGYJIP)
+[![RustFlash - Your Favourite Trio Server](https://github.com/Flash-Ticker/MyNotify/blob/main/MyNotify_Thumb.png)](https://youtu.be/xJzMHkWhYpw?si=Xg3FFy5DJ8DGYJIP)
 
 ---
 
