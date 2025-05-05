@@ -9,14 +9,14 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("MyNotify", "RustFlash", "1.0.0")]
-    [Description("A modern notification system for Rust ")]
-    public class MyNotify : RustPlugin
+    [Info("Notify", "RustFlash", "1.0.0")]
+    [Description("A modern notification system for Rust")]
+    public class Notify : RustPlugin
     {
         #region Felder
 
         private const string LAYER_NAME = "UI.MyNotify";
-        private static MyNotify instance;
+        private static Notify instance;
         private readonly Dictionary<ulong, NotificationManager> playerNotifications = new Dictionary<ulong, NotificationManager>();
         private readonly Dictionary<ulong, Timer> notificationTimers = new Dictionary<ulong, Timer>();
         
@@ -29,16 +29,10 @@ namespace Oxide.Plugins
         }
 
         private const string 
-            PermSeeNotify = "mynotify.see",
-            PermNotify = "mynotify.notify",
-            PermPlayerNotify = "mynotify.player",
-            PermAllPlayersNotify = "mynotify.allplayer";
-
-        private const string 
-            PermSeeNotifyOrig = "notify.see",
-            PermNotifyOrig = "notify.notify",
-            PermPlayerNotifyOrig = "notify.player",
-            PermAllPlayersNotifyOrig = "notify.allplayer";
+            PermSeeNotify = "notify.see",
+            PermNotify = "notify.notify",
+            PermPlayerNotify = "notify.player",
+            PermAllPlayersNotify = "notify.allplayer";
 
         #endregion
 
@@ -235,6 +229,11 @@ namespace Oxide.Plugins
             permission.RegisterPermission(PermPlayerNotify, this);
             permission.RegisterPermission(PermAllPlayersNotify, this);
             
+            AddCovalenceCommand("notify.show", nameof(CmdShowNotify));
+            AddCovalenceCommand("notify.player", nameof(CmdShowPlayerNotify));
+            AddCovalenceCommand("notify.allplayers", nameof(CmdShowAllPlayerNotify));
+            
+            // Für Kompatibilität auch die mynotify-Befehle registrieren
             AddCovalenceCommand("mynotify.show", nameof(CmdShowNotify));
             AddCovalenceCommand("mynotify.player", nameof(CmdShowPlayerNotify));
             AddCovalenceCommand("mynotify.allplayers", nameof(CmdShowAllPlayerNotify));
@@ -267,7 +266,7 @@ namespace Oxide.Plugins
 
         private void CmdShowNotify(IPlayer player, string command, string[] args)
         {
-            if (!player.IsServer && !HasNotifyPermission(player.Id, PermNotify, PermNotifyOrig))
+            if (!player.IsServer && !permission.UserHasPermission(player.Id, PermNotify))
             {
                 player.Reply(GetMsg("NoPermission", player.Id));
                 return;
@@ -290,7 +289,7 @@ namespace Oxide.Plugins
 
         private void CmdShowPlayerNotify(IPlayer player, string command, string[] args)
         {
-            if (!player.IsServer && !HasNotifyPermission(player.Id, PermPlayerNotify, PermPlayerNotifyOrig))
+            if (!player.IsServer && !permission.UserHasPermission(player.Id, PermPlayerNotify))
             {
                 player.Reply(GetMsg("NoPermission", player.Id));
                 return;
@@ -317,7 +316,7 @@ namespace Oxide.Plugins
 
         private void CmdShowAllPlayerNotify(IPlayer player, string command, string[] args)
         {
-            if (!player.IsServer && !HasNotifyPermission(player.Id, PermAllPlayersNotify, PermAllPlayersNotifyOrig))
+            if (!player.IsServer && !permission.UserHasPermission(player.Id, PermAllPlayersNotify))
             {
                 player.Reply(GetMsg("NoPermission", player.Id));
                 return;
@@ -332,24 +331,19 @@ namespace Oxide.Plugins
             string message = string.Join(" ", args.Skip(1));
             if (string.IsNullOrEmpty(message)) return;
 
-            SendNotifyToAllPlayers(type, message);
-        }
-
-        private bool HasNotifyPermission(string userId, string newPerm, string origPerm)
-        {
-            return permission.UserHasPermission(userId, newPerm) || 
-                   permission.UserHasPermission(userId, origPerm);
+            SendNotifyAllPlayers(type, message);
         }
 
         #endregion
         
         #region API Methoden 
 
+        [HookMethod("SendNotify")]
         private void SendNotify(BasePlayer player, int type, string message)
         {
             if (player == null) return;
             
-            if (!HasNotifyPermission(player.UserIDString, PermSeeNotify, PermSeeNotifyOrig))
+            if (!permission.UserHasPermission(player.UserIDString, PermSeeNotify))
             {
                 if (config.SendChatMessageIfNoPermission)
                     player.ChatMessage(message);
@@ -370,6 +364,7 @@ namespace Oxide.Plugins
             }
         }
         
+        [HookMethod("SendNotify")]
         private void SendNotify(string userId, int type, string message)
         {
             if (string.IsNullOrEmpty(userId)) return;
@@ -381,17 +376,38 @@ namespace Oxide.Plugins
             }
         }
         
+        [HookMethod("SendNotify")]
         private void SendNotify(ulong userId, int type, string message)
         {
             SendNotify(BasePlayer.FindByID(userId), type, message);
         }
         
-        private void SendNotifyToAllPlayers(int type, string message)
+        [HookMethod("SendNotifyAllPlayers")]
+        private void SendNotifyAllPlayers(int type, string message)
         {
             foreach (var player in BasePlayer.activePlayerList)
             {
                 SendNotify(player, type, message);
             }
+        }
+
+        // Kompatibilität mit dem ursprünglichen Notify API
+        [HookMethod("SendNotifyToPlayer")]
+        private void SendNotifyToPlayer(BasePlayer player, int type, string message)
+        {
+            SendNotify(player, type, message);
+        }
+
+        [HookMethod("SendNotifyToPlayer")]
+        private void SendNotifyToPlayer(string userId, int type, string message)
+        {
+            SendNotify(userId, type, message);
+        }
+
+        [HookMethod("SendNotifyToPlayer")]
+        private void SendNotifyToPlayer(ulong userId, int type, string message)
+        {
+            SendNotify(userId, type, message);
         }
 
         #endregion
@@ -664,7 +680,7 @@ namespace Oxide.Plugins
             Effect.server.Run(effect, player.transform.position);
         }
 
-        [ConsoleCommand("mynotify.close")]
+        [ConsoleCommand("notify.close")]
         private void CloseNotification(ConsoleSystem.Arg arg)
         {
             var player = arg.Player();
@@ -679,6 +695,13 @@ namespace Oxide.Plugins
             }
         }
 
+        // Kompatibilitätsbefehl für MyNotify
+        [ConsoleCommand("mynotify.close")]
+        private void CloseNotificationOriginal(ConsoleSystem.Arg arg)
+        {
+            CloseNotification(arg);
+        }
+
         #endregion
 
         #region NotificationManager Klasse
@@ -689,7 +712,7 @@ namespace Oxide.Plugins
             
             public NotificationManager(BasePlayer player)
             {
-                player = player;
+                this.player = player;
             }
             
             public void Destroy()
@@ -921,6 +944,5 @@ namespace Oxide.Plugins
                 }
 
         #endregion
-
     }
 }
